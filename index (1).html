@@ -1,0 +1,234 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a7a55">
+<title>دليلي الإداري</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Reem+Kufi:wght@600&display=swap">
+<style>
+/* Layout: one-screen chat — fixed header, scrolling log, composer pinned to the bottom; answers styled like an administrative receipt with a fee stamp */
+:root{
+  --bg:#e9f1ed; --surface:#ffffff; --ink:#0f1b17; --muted:#3f504a; --line:#c4d3cc;
+  --accent:#0a7a55; --accent-ink:#ffffff; --accent-soft:#d2ebdf; --stamp:#c42a1f;
+  --f-body:"IBM Plex Sans Arabic", "Noto Sans Arabic", Tahoma, sans-serif;
+  --f-display:"Reem Kufi", "IBM Plex Sans Arabic", Tahoma, sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0b1210; --surface:#16231e; --ink:#f3f8f5; --muted:#c0d0c9; --line:#33473f;
+  --accent:#3fd69c; --accent-ink:#06150f; --accent-soft:#1d4a39; --stamp:#ffa194; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0b1210; --surface:#16231e; --ink:#f3f8f5; --muted:#c0d0c9; --line:#33473f;
+  --accent:#3fd69c; --accent-ink:#06150f; --accent-soft:#1d4a39; --stamp:#ffa194; color-scheme:dark}
+html{box-sizing:border-box;height:100%}
+*,*::before,*::after{box-sizing:inherit}
+body{height:100%;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.7;margin:0}
+.app{height:100%;display:flex;flex-direction:column}
+.inner{width:100%;max-width:680px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.top{background:var(--accent);color:var(--accent-ink)}
+.top .inner{padding-block:14px;padding-top:calc(14px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:12px}
+.seal{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:var(--accent-ink);color:var(--accent);font-family:var(--f-display);font-size:26px;flex:none}
+.top h1{margin:0;font-family:var(--f-display);font-size:28px;line-height:1.2;font-weight:600}
+.top p{margin:0;font-size:14px;opacity:.92}
+.log{flex:1;overflow-y:auto;min-height:0}
+.log .inner{padding-block:18px;display:flex;flex-direction:column;gap:14px}
+.msg{max-width:92%;min-width:0}
+.user{align-self:flex-end;background:var(--accent);color:var(--accent-ink);font-weight:500;padding:10px 16px;border-radius:16px 16px 4px 16px}
+.bot{align-self:flex-start;display:flex;flex-direction:column;gap:8px}
+.say{margin:0}
+.card{background:var(--surface);border:1.5px solid var(--line);border-radius:14px;overflow:hidden}
+.card-h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:12px 14px;border-bottom:1px dashed var(--line)}
+.card-h h2{margin:0;font-size:19px;color:var(--accent);font-weight:600;text-wrap:balance}
+.card-h .fr{display:block;color:var(--muted);font-size:14px;direction:ltr;text-align:right}
+.stamp{flex:none;border:2px solid var(--stamp);color:var(--stamp);border-radius:6px;padding:3px 10px;font-size:15px;font-weight:600;transform:rotate(-3deg);white-space:nowrap;margin-top:2px}
+.rows{margin:0;padding:6px 14px 10px}
+.row{display:grid;grid-template-columns:110px 1fr;gap:10px;padding-block:7px;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row dt{color:var(--accent);font-weight:600;font-size:15px;padding-top:1px}
+.row dd{margin:0;min-width:0}
+.row ul{margin:0;padding-inline-start:18px}
+.row .grp{font-weight:600;font-size:16px;margin-top:4px}
+.row .grp:first-child{margin-top:0}
+.note{margin:6px 0 0;font-size:15px;color:var(--muted)}
+a{color:var(--accent);font-weight:500}
+.src{padding:10px 14px;background:var(--accent-soft);font-size:15px;color:var(--ink)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:inherit;font-size:15px;font-weight:500;border:1.5px solid var(--accent);background:var(--accent-soft);color:var(--ink);border-radius:999px;padding:7px 14px;cursor:pointer}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.chip:focus-visible,.send:focus-visible,#q:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.typing{color:var(--muted);font-size:15px}
+.composer{background:var(--surface);border-top:1px solid var(--line)}
+.composer .inner{padding-block:12px;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px}
+.bar{display:flex;gap:8px}
+#q{flex:1;min-width:0;font:inherit;font-size:17px;padding:12px 14px;border-radius:12px;border:1.5px solid var(--accent);background:var(--bg);color:var(--ink)}
+.send{font:inherit;font-size:17px;font-weight:600;border:0;border-radius:12px;padding:0 18px;background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.fine{margin:0;font-size:13px;color:var(--muted)}
+@media (max-width:420px){.row{grid-template-columns:1fr;gap:2px}}
+</style>
+
+<div class="app" dir="rtl" lang="ar">
+  <header class="top"><div class="inner">
+    <span class="seal" aria-hidden="true">د</span>
+    <div><h1>دليلي</h1><p>مساعد الإجراءات الإدارية بالدارجة · نموذج أولي، فريق 14</p></div>
+  </div></header>
+  <main class="log" id="log"><div class="inner" id="list" aria-live="polite"></div></main>
+  <form class="composer" id="f" autocomplete="off"><div class="inner">
+    <div class="bar">
+      <input id="q" type="text" placeholder="سول بالدارجة، بالعربية ولا بالفرنسية…" aria-label="سؤالك">
+      <button class="send" type="submit">صيفط</button>
+    </div>
+    <p class="fine">المعلومات جمعها الفريق ومازال خاصها التحقق. تأكد منها عند الإدارة قبل ما تمشي.</p>
+  </div></form>
+</div>
+
+<script>
+const P = [
+ {id:"birth", name:"نسخة موجزة من عقد الازدياد", fr:"Extrait d'acte de naissance", stamp:"مجانية",
+  keys:["ازدياد","الازدياد","زياده","ولاده","رسم الولاده","عقد الازدياد","extrait","naissance","izdiyad","ezdiyad","l3a9d"],
+  docs:[{items:["الدفتر العائلي، أو نسخة قديمة من عقد الازدياد (باش يعرفو رقم وتاريخ التسجيل)","البطاقة الوطنية ديال المعني، أو ديال الأب/الأم إلى كان قاصر"]}],
+  office:"مصلحة الحالة المدنية بالجماعة أو المقاطعة اللي تزاديتي فيها.",
+  online:{url:"https://www.watiqa.ma",label:"Watiqa.ma",how:"تطلبها عن بعد وتوصلك بالبريد."},
+  hours:"من الإثنين للجمعة، 08:30 حتى 16:30.",
+  price:"مجانية حضوريًا. إلى طلبتيها أونلاين كتخلص البريد المضمون (حوالي 20 درهم).",
+  duration:"فورية حضوريًا، وأسبوع حتى أسبوعين أونلاين."},
+ {id:"res", name:"شهادة السكنى", fr:"Certificat de résidence", stamp:"مجانية",
+  keys:["سكني","السكني","شهاده السكن","سكنه","residence","sokna","sukna","soukna"],
+  docs:[{items:["إثبات السكن: فاتورة ماء أو ضو حديثة، أو عقد كراء مصادق عليه","نسخة من البطاقة الوطنية","جوج صور حديثة"]}],
+  office:"للبطاقة الوطنية: الدائرة الأمنية (الشرطة)، أو الدرك الملكي فالعالم القروي. لأغراض أخرى: الملحقة الإدارية (المقاطعة أو القيادة).",
+  online:null, offlineNote:"ما كايناش منصة، الإجراء حضوري.",
+  hours:"08:30 حتى 16:30.",
+  price:"مجانية.",
+  duration:"غالبًا 24 حتى 48 ساعة من بعد ما تحط الملف.",
+  note:"لشهادة السكنى ديال البطاقة الوطنية: خود أولا «شهادة إدارية» من الملحقة الإدارية (المقدم/القائد)، ومن بعد مشي بيها للشرطة أو الدرك مع جوج صور زايدين."},
+ {id:"legal", name:"تصحيح الإمضاء", fr:"Légalisation de signature", stamp:"2 دراهم",
+  keys:["تصحيح","امضاء","الامضاء","التوقيع","توقيع","نصحح","legalisation","legaliser","signature","tas7i7","tes7i7"],
+  docs:[{items:["الوثيقة اللي بغيتي تصحح عليها الإمضاء","البطاقة الوطنية صالحة","الحضور الشخصي باش تسني قدام الموظف"]}],
+  office:"مصلحة تصحيح الإمضاءات بالجماعة أو المقاطعة.",
+  online:null, offlineNote:"حضوري إلزامي، خاصك تسني قدام الموظف.",
+  hours:"من الإثنين للجمعة، 08:30 حتى 16:30.",
+  price:"2 دراهم للوثيقة (طابع جبائي جماعي).",
+  duration:"فوري، غير تسني قدام الموظف."},
+ {id:"copie", name:"مطابقة النسخة للأصل", fr:"Copie conforme", stamp:"2 دراهم",
+  keys:["مطابقه","للاصل","الاصل","نسخه مطابقه","copie","conforme","copi","كوبي"],
+  docs:[{items:["الوثيقة الأصلية","النسخة أو النسخ اللي بغيتي تصادق عليهم","البطاقة الوطنية"]}],
+  office:"مصلحة الحالة المدنية وتصحيح الإمضاءات بالجماعة أو المقاطعة.",
+  online:null, offlineNote:"الإجراء حضوري.",
+  hours:"08:30 حتى 16:30.",
+  price:"2 دراهم على كل نسخة.",
+  duration:"فورية."},
+ {id:"cnie", name:"البطاقة الوطنية للتعريف", fr:"CNIE · première demande ou renouvellement", stamp:"75 درهم",
+  keys:["البطاقه الوطنيه","بطاقه التعريف","لاكارط","لاكارت","كارط","البطاقه","بطاقه","التعريف","cnie","cin","carte","lakart","lacarte","نجدد"],
+  docs:[{title:"أول مرة",items:["شهادة السكنى من الأمن الوطني أو الدرك الملكي","نسخة كاملة أو موجزة من رسم الولادة، ما فاتهاش 6 شهور","4 صور حديثة 3.5 × 4.5 سم، خلفية رمادية أو زرقاء فاتحة، بلا نظاظر","واجب التمبر 75 درهم"]},
+        {title:"التجديد",items:["البطاقة القديمة","4 صور مطابقة للمعايير","واجب التمبر 75 درهم","شهادة سكنى جديدة غير إلى بدلتي العنوان"]}],
+  office:"مصالح الأمن الوطني (دائرة الشرطة المختصة).",
+  online:{url:"https://www.cnie.ma",label:"cnie.ma",how:"تاخد الموعد وتعمر الاستمارة مسبقًا."},
+  hours:"حسب الموعد اللي ختاريتي (عادة 08:30 حتى 16:30).",
+  price:"75 درهم (واجب التمبر).",
+  duration:"10 حتى 15 يوم تقريبًا، وكتستلمها من نفس المركز اللي حطيتي فيه الطلب.",
+  note:"إلى ضاعت ولا تسرقات، خاصك تصريح بالضياع."},
+ {id:"casier", name:"السجل العدلي", fr:"Extrait de casier judiciaire", stamp:"0 – 10 دراهم",
+  keys:["السجل العدلي","العدلي","عدلي","السوابق","casier","judiciaire","فيش","fiche","sijil"],
+  docs:[{items:["نسخة من البطاقة الوطنية","نسخة من عقد الازدياد (إلى طلبتيه شخصيًا فمحكمة مكان الازدياد)"]}],
+  office:"المحكمة الابتدائية ديال مكان الازدياد. إلى طلبتيه أونلاين، كتسحبو من المحكمة الابتدائية القريبة لسكناك بالبطاقة الوطنية.",
+  online:{url:"https://casierjudiciaire.justice.gov.ma",label:"casierjudiciaire.justice.gov.ma",how:"الطريقة الأسهل: تطلبو أونلاين."},
+  hours:"أوقات المحاكم، 08:30 حتى 16:30.",
+  price:"مجاني إلى توصلتي بيه فالإيميل. 10 دراهم (تمبر قضائي) إلى سحبتيه ورقيًا من المحكمة.",
+  duration:"فوري فالمحكمة، ويوم حتى يومين أونلاين."},
+ {id:"vie", name:"شهادة الحياة", fr:"Certificat de vie", stamp:"مجانية",
+  keys:["الحياه","حياه","vie","hayat","7ayat"],
+  docs:[{items:["البطاقة الوطنية أو الدفتر العائلي","الحضور الشخصي ديال المعني بالأمر ضروري"]}],
+  office:"مصلحة الحالة المدنية بالجماعة أو المقاطعة.",
+  online:null, offlineNote:"الحضور الشخصي ضروري باش يتأكدو أن الشخص حي.",
+  hours:"08:30 حتى 16:30.",
+  price:"مجانية.",
+  duration:"فورية."},
+ {id:"permit", name:"رخصة البناء أو الإصلاح", fr:"Permis de construire / autorisation de réparation", stamp:"حسب الملف",
+  keys:["رخصه البناء","رخصه الاصلاح","البني","بناء","البناء","اصلاح","الاصلاح","ترميم","نبني","نصلح","رخص","permis","construire","construction","reparation","rokhas"],
+  docs:[{title:"رخصة الإصلاح (ترميم وإصلاحات بسيطة)",items:["طلب خطي لرئيس المجلس الجماعي","نسخة من البطاقة الوطنية","شهادة الملكية، أو عقد الكراء مع موافقة مكتوبة من مول الدار","وصف أو تصميم مبسط للأشغال"]},
+        {title:"رخصة البناء (بناء جديد)",items:["شهادة ملكية حديثة ديال البقعة","تصاميم معمارية من مهندس معماري معتمد","تصاميم الخرسانة والحديد من مكتب الدراسات","تصميم طبوغرافي"]}],
+  office:"الجماعة الترابية، بتنسيق مع الوكالة الحضرية.",
+  online:{url:"https://www.rokhas.ma",label:"rokhas.ma",how:"المهندس المعماري كيدفع الملف كامل فالمنصة."},
+  hours:"الإجراء رقمي عبر المنصة.",
+  price:"كيختلف حسب نوع الرخصة، المساحة، الرسوم الجماعية وأتعاب المهندس ومكتب الدراسات. رخصة الإصلاح رسومها بسيطة.",
+  duration:"الإصلاح: بضعة أيام حتى أسبوع. البناء: غالبًا أسبوعين حتى شهر إلى كان الملف كامل."}
+];
+
+const INTENTS = [
+ {id:"duration",label:"شحال كتاخد؟",keys:["مده","كياخد","كتاخد","شحال ديال الوقت","فوقاش","delai","jours","ايام","يوم"],intro:n=>`المدة ديال «${n}»:`},
+ {id:"price",label:"بشحال؟",keys:["بشحال","ثمن","الثمن","فلوس","رسوم","تمبر","درهم","كيسوا","prix","combien","cout","tarif"],intro:n=>`الثمن ديال «${n}»:`},
+ {id:"online",label:"واش كاين أونلاين؟",keys:["انترنت","الانترنت","اونلاين","online","en ligne","موقع","رابط","عن بعد","من الدار","منصه","site"],intro:n=>`«${n}» عبر الإنترنت:`},
+ {id:"hours",label:"أوقات العمل",keys:["اوقات","وقت","الساعه","ساعه","مفتوح","كيحلو","horaire","heure","ouvert"],intro:n=>`أوقات العمل ديال «${n}»:`},
+ {id:"office",label:"فين نمشي؟",keys:["فين","اين","فاين","الاداره","اداره","مكتب","شكون","adresse","bureau","lieu","ou "],intro:n=>`فين تمشي باش تدير «${n}»:`},
+ {id:"docs",label:"الوثائق",keys:["وثائق","الوثائق","اوراق","الاوراق","خاصني","نحتاج","ملف","documents","papiers","dossier"],intro:n=>`الوثائق اللي خاصك لـ«${n}»:`}
+];
+const LABEL = {docs:"الوثائق",office:"فين تمشي",hours:"الأوقات",price:"الثمن",duration:"المدة",online:"أونلاين"};
+const ORDER = ["docs","office","hours","price","duration","online"];
+
+const norm = s => (" "+s+" ").toLowerCase()
+  .replace(/[ً-ْـ]/g,"").replace(/[أإآ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي")
+  .replace(/[éèê]/g,"e").replace(/[àâ]/g,"a").replace(/[؟?!.,،]/g," ");
+P.forEach(p=>p.nk=p.keys.map(k=>norm(k).trim()));
+INTENTS.forEach(i=>i.nk=i.keys.map(k=>norm(k).replace(/^ +/,"")));
+const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function hit(q,k){
+  if(k.length<=3 && /^[a-z]/.test(k)) return new RegExp("(^|[^a-z])"+k).test(q);
+  return q.includes(k);
+}
+function findProc(q){
+  let best=null,score=0;
+  for(const p of P){let s=0;for(const k of p.nk) if(hit(q,k)) s+=k.length; if(s>score){score=s;best=p}}
+  return best;
+}
+const findIntent = q => INTENTS.find(i=>i.nk.some(k=>q.includes(k))) || null;
+
+function field(p,key){
+  if(key==="docs") return p.docs.map(g=>(g.title?`<div class="grp">${esc(g.title)}</div>`:"")+"<ul>"+g.items.map(i=>`<li>${esc(i)}</li>`).join("")+"</ul>").join("");
+  if(key==="online") return p.online ? `<a href="${p.online.url}" target="_blank" rel="noopener">${esc(p.online.label)}</a> · ${esc(p.online.how)}` : esc(p.offlineNote);
+  return esc(p[key]);
+}
+function card(p,only){
+  const keys = only ? [only] : ORDER;
+  const rows = keys.map(k=>`<div class="row"><dt>${LABEL[k]}</dt><dd>${field(p,k)}</dd></div>`).join("");
+  const note = (!only || only==="docs" || only==="office") && p.note ? `<p class="note">${esc(p.note)}</p>` : "";
+  const src = p.online ? `المصدر الرسمي: <a href="${p.online.url}" target="_blank" rel="noopener">${esc(p.online.label)}</a>` : "المصدر: معلومات جمعها الفريق، خاصها التحقق";
+  return `<div class="card"><div class="card-h"><div><h2>${esc(p.name)}</h2><span class="fr">${esc(p.fr)}</span></div><span class="stamp">${esc(p.stamp)}</span></div>
+    <dl class="rows">${rows}${note?`<div class="row"><dt>ملاحظة</dt><dd>${note.replace(/<\/?p[^>]*>/g,"")}</dd></div>`:""}</dl><div class="src">${src}</div></div>`;
+}
+function chips(list){ return `<div class="chips">${list.map(([label,q])=>`<button type="button" class="chip" data-q="${esc(q)}">${esc(label)}</button>`).join("")}</div>`; }
+const procChips = () => chips(P.map(p=>[p.name,"شنو خاصني لـ"+p.name]));
+
+let last=null;
+function answer(text){
+  const q=norm(text);
+  let p=findProc(q); const it=findIntent(q);
+  if(!p && it && last) p=last;
+  if(!p){
+    if(/سلام|salam|bonjour|مرحبا|اهلا|salut|ahlan/.test(q))
+      return `<p class="say">وعليكم السلام! سولني على شي إجراء إداري، مثلا: «شنو خاصني لشهادة السكنى؟»</p>`+procChips();
+    return `<p class="say">سمح ليا، ما لقيتش جواب على هاد السؤال. دابا كنعاون غير فهاد الإجراءات، وللباقي سول مصلحة الجماعة ديالك:</p>`+procChips();
+  }
+  last=p;
+  const only = it ? it.id : null;
+  const intro = only ? it.intro(p.name) : `هادشي اللي خاصك تعرف على «${p.name}»:`;
+  const more = INTENTS.filter(i=>i.id!==only).slice(0,4).map(i=>[i.label,i.label]);
+  if(only) more.unshift(["كلشي على "+p.name,"كلشي على "+p.name]);
+  return `<p class="say">${esc(intro)}</p>${card(p,only)}${chips(more)}`;
+}
+
+const list=document.getElementById("list"), log=document.getElementById("log");
+function add(cls,html){const d=document.createElement("div");d.className="msg "+cls;d.innerHTML=html;list.appendChild(d);log.scrollTop=log.scrollHeight;return d}
+const slow = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+function ask(text){
+  text=text.trim(); if(!text) return;
+  add("user",esc(text));
+  const t=add("bot",`<span class="typing">كنقلب…</span>`);
+  setTimeout(()=>{t.innerHTML=answer(text);log.scrollTop=log.scrollHeight}, slow?380:0);
+}
+document.getElementById("f").addEventListener("submit",e=>{e.preventDefault();const i=document.getElementById("q");ask(i.value);i.value=""});
+list.addEventListener("click",e=>{const b=e.target.closest(".chip");if(b) ask(b.dataset.q)});
+
+add("bot",`<p class="say">مرحبا! أنا دليلي. سولني بالدارجة ولا بالعربية ولا بالفرنسية على الوثائق، فين تمشي، الثمن والمدة ديال الإجراءات الإدارية.</p>`+procChips());
+add("user","شنو خاصني باش نجدد لاكارط؟");
+add("bot",answer("شنو خاصني باش نجدد لاكارط؟"));
+</script>
