@@ -64,13 +64,35 @@ a{color:var(--accent);font-weight:500}
 .send{font:inherit;font-size:17px;font-weight:600;border:0;border-radius:12px;padding:0 18px;background:var(--accent);color:var(--accent-ink);cursor:pointer}
 .fine{margin:0;font-size:13px;color:var(--muted)}
 @media (max-width:420px){.row{grid-template-columns:1fr;gap:2px}}
+.ai-btn{margin-inline-start:auto;font:inherit;font-size:14px;font-weight:600;border:1.5px solid var(--accent-ink);background:transparent;color:var(--accent-ink);border-radius:999px;padding:6px 12px;cursor:pointer;white-space:nowrap}
+.ai-btn.on{background:var(--accent-ink);color:var(--accent)}
+.ai-btn:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
+.panel{background:var(--surface);border-bottom:1.5px solid var(--line)}
+.panel .inner{padding-block:14px;display:flex;flex-direction:column;gap:10px}
+.panel p{margin:0;font-size:15px;color:var(--muted)}
+.panel .bar input{flex:1;min-width:0;font:inherit;font-size:16px;padding:10px 12px;border-radius:10px;border:1.5px solid var(--accent);background:var(--bg);color:var(--ink);direction:ltr}
+.ghost{font:inherit;font-size:15px;border:1.5px solid var(--line);background:transparent;color:var(--ink);border-radius:12px;padding:0 14px;cursor:pointer}
+.ai-text{background:var(--surface);border:1.5px solid var(--line);border-radius:14px;padding:12px 14px}
+.ai-text p{margin:0 0 8px}.ai-text p:last-child{margin:0}
+.ai-text ul{margin:0 0 8px;padding-inline-start:20px}
+.ai-text strong{color:var(--accent)}
+.tag{font-size:12.5px;color:var(--muted)}
 </style>
 
 <div class="app" dir="rtl" lang="ar">
   <header class="top"><div class="inner">
     <span class="seal" aria-hidden="true">د</span>
     <div><h1>دليلي</h1><p>مساعد الإجراءات الإدارية بالدارجة · نموذج أولي، فريق 14</p></div>
+    <button type="button" class="ai-btn" id="aiBtn" aria-expanded="false" aria-controls="panel">تفعيل Gemini</button>
   </div></header>
+  <section class="panel" id="panel" hidden><div class="inner">
+    <p>دخل مفتاح Gemini API باش يجاوب دليلي على الأسئلة الحرة. المفتاح كيتحفظ غير فهاد الجهاز، وما كيتنشرش فالموقع.</p>
+    <div class="bar">
+      <input id="key" type="password" placeholder="AIza…" aria-label="مفتاح Gemini API" autocomplete="off">
+      <button type="button" class="send" id="saveKey">حفظ</button>
+      <button type="button" class="ghost" id="delKey">حذف</button>
+    </div>
+  </div></section>
   <main class="log" id="log"><div class="inner" id="list" aria-live="polite"></div></main>
   <form class="composer" id="f" autocomplete="off"><div class="inner">
     <div class="bar">
@@ -219,16 +241,80 @@ function answer(text){
 const list=document.getElementById("list"), log=document.getElementById("log");
 function add(cls,html){const d=document.createElement("div");d.className="msg "+cls;d.innerHTML=html;list.appendChild(d);log.scrollTop=log.scrollHeight;return d}
 const slow = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+/* ---------- Gemini ---------- */
+const MODELS=["gemini-flash-latest","gemini-3.8-flash","gemini-3.6-flash","gemini-3.1-flash-lite"];
+let apiKey=""; try{apiKey=localStorage.getItem("dalili_key")||""}catch(e){}
+const history=[];
+const KB=JSON.stringify(P.map(({keys,nk,stamp,...r})=>r));
+const SYS=`أنت «دليلي»، مساعد يشرح للمواطنين المغاربة الإجراءات الإدارية.
+القواعد:
+- جاوب بنفس لغة السؤال: بالدارجة المغربية بالحروف العربية إلى سول بالدارجة، وبالعربية الفصحى أو الفرنسية إلى سول بيهم.
+- المعلومات ديال الإجراءات (الوثائق، الإدارة، الأوقات، الثمن، المدة، الروابط) خودها غير من قاعدة المعلومات اللي تحت. ما تخترعش أثمنة ولا مدد ولا وثائق.
+- إلى كان السؤال على إجراء ماشي فالقاعدة، قول بوضوح أن ما عندكش معلومات متحقق منها، ونصح المواطن يسول الجماعة ديالو أو بوابة idarati.ma.
+- تقدر تشرح، تقارن، تنظم الخطوات بالترتيب، وتجاوب على أسئلة المتابعة، ولكن ديما على أساس القاعدة.
+- خلي الجواب قصير وواضح: جملة وحدة فالبداية، ومن بعد نقاط إلى احتاجيتي. ختم بالرابط الرسمي إلى كان.
+- إلى كان السؤال بعيد على الإدارة، رد بأدب ورجع للموضوع.
+قاعدة المعلومات (JSON):
+${KB}`;
+
+async function gemini(text){
+  history.push({role:"user",parts:[{text}]});
+  const body=JSON.stringify({systemInstruction:{parts:[{text:SYS}]},contents:history.slice(-12),generationConfig:{temperature:0.3,maxOutputTokens:2048}});
+  let lastErr="";
+  for(const m of MODELS){
+    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`,{method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":apiKey},body});
+    if(r.status===404){lastErr="404";continue}
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok){history.pop();throw new Error(j.error&&j.error.message||("HTTP "+r.status))}
+    const out=(j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts||[]).map(x=>x.text||"").join("").trim();
+    if(!out){history.pop();throw new Error("جواب خاوي")}
+    history.push({role:"model",parts:[{text:out}]});
+    return out;
+  }
+  history.pop(); throw new Error("ما لقيتش نموذج Gemini متاح ("+lastErr+")");
+}
+function md(t){
+  const lines=esc(t).replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>")
+    .replace(/(https?:\/\/[^\s<)]+)/g,'<a href="$1" target="_blank" rel="noopener">$1</a>')
+    .replace(/(^|[\s(])((?:www\.)?[a-z0-9-]+\.(?:ma|gov\.ma|justice\.gov\.ma))(?=[\s.,)]|$)/gi,'$1<a href="https://$2" target="_blank" rel="noopener">$2</a>')
+    .split("\n");
+  let h="",ul=false;
+  for(const l of lines){
+    const m=l.match(/^\s*(?:[-*•]|\d+[.)])\s+(.*)/);
+    if(m){if(!ul){h+="<ul>";ul=true}h+=`<li>${m[1]}</li>`}
+    else{if(ul){h+="</ul>";ul=false} if(l.trim()) h+=`<p>${l}</p>`}
+  }
+  return h+(ul?"</ul>":"");
+}
+
 function ask(text){
   text=text.trim(); if(!text) return;
   add("user",esc(text));
   const t=add("bot",`<span class="typing">كنقلب…</span>`);
-  setTimeout(()=>{t.innerHTML=answer(text);log.scrollTop=log.scrollHeight}, slow?380:0);
+  if(!apiKey){ setTimeout(()=>{t.innerHTML=answer(text);log.scrollTop=log.scrollHeight}, slow?380:0); return; }
+  gemini(text).then(out=>{
+    const p=findProc(norm(text)); if(p) last=p;
+    t.innerHTML=`<div class="ai-text">${md(out)}</div>`+(p?chips([["البطاقة الكاملة ديال "+p.name,"@card:"+p.id]]):"");
+  }).catch(err=>{
+    t.innerHTML=`<p class="tag">ما قدرتش نتصل بـ Gemini (${esc(err.message)}). هادا جواب من القاعدة المحلية:</p>`+answer(text);
+  }).finally(()=>{log.scrollTop=log.scrollHeight});
 }
+function showCard(id){
+  const p=P.find(x=>x.id===id); if(!p) return; last=p;
+  add("bot",`<p class="say">هادشي اللي خاصك تعرف على «${esc(p.name)}»:</p>${card(p,null)}`);
+}
+
+const aiBtn=document.getElementById("aiBtn"), panel=document.getElementById("panel"), keyIn=document.getElementById("key");
+function syncAi(){aiBtn.textContent=apiKey?"Gemini مفعل":"تفعيل Gemini";aiBtn.classList.toggle("on",!!apiKey)}
+aiBtn.addEventListener("click",()=>{panel.hidden=!panel.hidden;aiBtn.setAttribute("aria-expanded",String(!panel.hidden));if(!panel.hidden){keyIn.value=apiKey;keyIn.focus()}});
+document.getElementById("saveKey").addEventListener("click",()=>{apiKey=keyIn.value.trim();try{localStorage.setItem("dalili_key",apiKey)}catch(e){}panel.hidden=true;syncAi();add("bot",`<p class="say">${apiKey?"تفعل Gemini. دابا تقدر تسولني أسئلة حرة.":"ما دخلتي حتى مفتاح."}</p>`)});
+document.getElementById("delKey").addEventListener("click",()=>{apiKey="";keyIn.value="";try{localStorage.removeItem("dalili_key")}catch(e){}panel.hidden=true;syncAi();add("bot",`<p class="say">تحيد المفتاح. رجعت للقاعدة المحلية.</p>`)});
+syncAi();
 document.getElementById("f").addEventListener("submit",e=>{e.preventDefault();const i=document.getElementById("q");ask(i.value);i.value=""});
-list.addEventListener("click",e=>{const b=e.target.closest(".chip");if(b) ask(b.dataset.q)});
+list.addEventListener("click",e=>{const b=e.target.closest(".chip");if(!b) return; const q=b.dataset.q; if(q.startsWith("@card:")) showCard(q.slice(6)); else ask(q)});
 
 add("bot",`<p class="say">مرحبا! أنا دليلي. سولني بالدارجة ولا بالعربية ولا بالفرنسية على الوثائق، فين تمشي، الثمن والمدة ديال الإجراءات الإدارية.</p>`+procChips());
 add("user","شنو خاصني باش نجدد لاكارط؟");
 add("bot",answer("شنو خاصني باش نجدد لاكارط؟"));
+history.push({role:"user",parts:[{text:"شنو خاصني باش نجدد لاكارط؟"}]},{role:"model",parts:[{text:"باش تجدد البطاقة الوطنية خاصك: البطاقة القديمة، 4 صور مطابقة للمعايير، وواجب التمبر 75 درهم. شهادة سكنى جديدة غير إلى بدلتي العنوان. خود الموعد من cnie.ma."}]});
 </script>
