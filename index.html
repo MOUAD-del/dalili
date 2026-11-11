@@ -263,15 +263,18 @@ async function gemini(text){
   let lastErr="";
   for(const m of MODELS){
     const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`,{method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":apiKey},body});
-    if(r.status===404){lastErr="404";continue}
     const j=await r.json().catch(()=>({}));
-    if(!r.ok){history.pop();throw new Error(j.error&&j.error.message||("HTTP "+r.status))}
+    if(!r.ok){
+      lastErr=j.error&&j.error.message||("HTTP "+r.status);
+      if([404,429,500,503].includes(r.status)) continue;
+      history.pop(); throw new Error(lastErr);
+    }
     const out=(j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts||[]).map(x=>x.text||"").join("").trim();
     if(!out){history.pop();throw new Error("جواب خاوي")}
     history.push({role:"model",parts:[{text:out}]});
     return out;
   }
-  history.pop(); throw new Error("ما لقيتش نموذج Gemini متاح ("+lastErr+")");
+  history.pop(); throw new Error("Gemini مشغول دابا، عاود من بعد شوية ("+lastErr+")");
 }
 function md(t){
   const lines=esc(t).replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>")
